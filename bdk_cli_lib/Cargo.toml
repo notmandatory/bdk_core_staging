@@ -1,7 +1,7 @@
 [package]
 name = "bdk_cli"
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
@@ -10,7 +10,7 @@ bdk_chain = { path = "../bdk_chain", features = ["serde", "miniscript", "file_st
 bdk_tmp_plan = { path = "../bdk_tmp_plan" }
 bdk_coin_select = { path = "../bdk_coin_select" }
 # Auxiliaries
-clap = { version = "4", features = ["derive", "env"] }
+clap = { version = "3.2.23", features = ["derive", "env"] }
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 thiserror = "1.0.37"

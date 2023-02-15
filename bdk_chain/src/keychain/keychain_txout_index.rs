@@ -10,7 +10,7 @@ use core::{fmt::Debug, ops::Deref};
 use super::DerivationAdditions;
 
 /// Maximum [BIP32](https://bips.xyz/32) derivation index.
-pub const BIP32_MAX_INDEX: u32 = 1 << 31 - 1;
+pub const BIP32_MAX_INDEX: u32 = 1 << (31 - 1);
 
 /// A convenient wrapper around [`SpkTxOutIndex`] that relates script pubkeys to miniscript public
 /// [`Descriptor`]s.
@@ -69,7 +69,7 @@ pub struct KeychainTxOutIndex<K> {
     lookahead: BTreeMap<K, u32>,
 }
 
-impl<K> Default for KeychainTxOutIndex<K> {
+impl<K: Ord> Default for KeychainTxOutIndex<K> {
     fn default() -> Self {
         Self {
             inner: SpkTxOutIndex::default(),
@@ -379,9 +379,11 @@ impl<K: Clone + Ord + Debug> KeychainTxOutIndex<K> {
             Some(index) => {
                 let _old_index = self.last_revealed.insert(keychain.clone(), index);
                 debug_assert!(_old_index < Some(index));
+                let mut additions = BTreeMap::new();
+                additions.insert(keychain.clone(), index);
                 (
                     range_descriptor_spks(Cow::Owned(descriptor.clone()), next_index..index + 1),
-                    DerivationAdditions([(keychain.clone(), index)].into()),
+                    DerivationAdditions(additions),
                 )
             }
             None => (
@@ -531,10 +533,10 @@ where
         // we can only iterate over non-hardened indices
         .take_while(|&index| index <= BIP32_MAX_INDEX)
         // take until failure
-        .map_while(move |index| {
+        .scan((), move |(), index| {
             descriptor
                 .derived_descriptor(&secp, index)
                 .map(|desc| (index, desc.script_pubkey()))
                 .ok()
-        })
+        }).fuse()
 }

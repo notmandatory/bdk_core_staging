@@ -40,7 +40,7 @@ pub struct SpkTxOutIndex<I> {
     spk_txouts: BTreeSet<(I, OutPoint)>,
 }
 
-impl<I> Default for SpkTxOutIndex<I> {
+impl<I: Ord> Default for SpkTxOutIndex<I> {
     fn default() -> Self {
         Self {
             txouts: Default::default(),
@@ -79,13 +79,13 @@ impl<I: Clone + Ord> SpkTxOutIndex<I> {
     /// See [`ForEachTxout`] for the types that support this.
     ///
     /// [`ForEachTxout`]: crate::ForEachTxOut
-    pub fn scan(&mut self, txouts: &impl ForEachTxOut) -> BTreeSet<&I> {
+    pub fn scan(&mut self, txouts: &impl ForEachTxOut) -> BTreeSet<I> {
         // let scanner = &mut SpkTxOutScanner::new(self);
         let mut scanned_indices = BTreeSet::new();
 
         txouts.for_each_txout(|(op, txout)| {
             if let Some(spk_i) = scan_txout!(self, op, txout) {
-                scanned_indices.insert(spk_i);
+                scanned_indices.insert(spk_i.clone());
             }
         });
 
@@ -207,7 +207,7 @@ impl<I: Clone + Ord> SpkTxOutIndex<I> {
     {
         self.unused
             .range(range)
-            .map(|index| (index, self.spk_at_index(index).expect("must exist")))
+            .map(move |index| (index, self.spk_at_index(index).expect("must exist")))
     }
 
     /// Returns whether the script pubkey at `index` has been used or not.

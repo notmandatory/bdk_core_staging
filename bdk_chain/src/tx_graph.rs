@@ -328,9 +328,11 @@ impl<T: AsTransaction + Ord + Clone> TxGraph<T> {
     /// the `outpoint`) already existed in `self`.
     pub fn insert_txout_preview(&self, outpoint: OutPoint, txout: TxOut) -> Additions<T> {
         let mut update = Self::default();
+        let mut partials = BTreeMap::new();
+        partials.insert(outpoint.vout, txout);
         update.txs.insert(
             outpoint.txid,
-            TxNode::Partial([(outpoint.vout, txout)].into()),
+            TxNode::Partial(partials),
         );
         self.determine_additions(&update)
     }
@@ -420,7 +422,7 @@ impl<T> TxGraph<T> {
         tx.input
             .iter()
             .enumerate()
-            .filter_map(|(vin, txin)| self.spends.get(&txin.previous_output).zip(Some(vin)))
+            .filter_map(move |(vin, txin)| self.spends.get(&txin.previous_output).zip(Some(vin)))
             .flat_map(|(spends, vin)| core::iter::repeat(vin).zip(spends.iter().cloned()))
             .filter(move |(_, conflicting_txid)| *conflicting_txid != txid)
     }
@@ -475,7 +477,7 @@ impl<T> Additions<T> {
                     .output
                     .iter()
                     .enumerate()
-                    .map(|(vout, txout)| (OutPoint::new(tx.as_tx().txid(), vout as _), txout))
+                    .map(move |(vout, txout)| (OutPoint::new(tx.as_tx().txid(), vout as _), txout))
             })
             .chain(self.txout.iter().map(|(op, txout)| (*op, txout)))
     }
@@ -491,7 +493,7 @@ impl<T> Additions<T> {
     }
 }
 
-impl<T> Default for Additions<T> {
+impl<T: Ord> Default for Additions<T> {
     fn default() -> Self {
         Self {
             tx: Default::default(),

@@ -9,6 +9,7 @@ use crate::{
     tx_graph::TxGraph,
     AsTransaction, BlockId, FullTxOut, IntoOwned, TxHeight,
 };
+use crate::sparse_chain::ChainPosition;
 
 use super::{Balance, DerivationAdditions};
 
@@ -71,13 +72,18 @@ where
         T2: IntoOwned<T> + Clone,
     {
         // TODO: `KeychainTxOutIndex::determine_additions`
-        let mut derivation_indices = scan.last_active_indices.clone();
-        derivation_indices.retain(|keychain, index| {
-            match self.txout_index.last_revealed_index(keychain) {
-                Some(existing) => *index > existing,
-                None => true,
+        let mut derivation_indices = BTreeMap::new();
+        for (keychain, index) in scan.last_active_indices.clone().into_iter() {
+            match self.txout_index.last_revealed_index(&keychain) {
+                Some(existing) if index > existing => {
+                    derivation_indices.insert(keychain.clone(), index);
+                },
+                None => {
+                    derivation_indices.insert(keychain.clone(), index);
+                },
+                _ => ()
             }
-        });
+        }
 
         Ok(KeychainChangeSet {
             derivation_indices: DerivationAdditions(derivation_indices),
@@ -125,7 +131,7 @@ where
     pub fn full_txouts(&self) -> impl Iterator<Item = (&(K, u32), FullTxOut<P>)> + '_ {
         self.txout_index
             .txouts()
-            .filter_map(|(spk_i, op, _)| Some((spk_i, self.chain_graph.full_txout(op)?)))
+            .filter_map( move |(spk_i, op, _)| Some((spk_i, self.chain_graph.full_txout(op)?)))
     }
 
     /// Iterates through [`FullTxOut`]s that are unspent outputs.
@@ -241,7 +247,9 @@ where
         let mut untrusted_pending = 0;
         let mut confirmed = 0;
         let last_sync_height = self.chain().latest_checkpoint().map(|latest| latest.height);
-        for ((keychain, _), utxo) in self.full_utxos() {
+        for full_utxo in self.full_utxos() {
+            let (keychain, _) = full_utxo.0;
+            let utxo = full_utxo.1;
             let chain_position = &utxo.chain_position;
 
             match chain_position.height() {
@@ -287,7 +295,7 @@ where
     }
 }
 
-impl<K, P> Default for KeychainTracker<K, P> {
+impl<K:Ord, P:ChainPosition> Default for KeychainTracker<K, P> {
     fn default() -> Self {
         Self {
             txout_index: Default::default(),

@@ -30,7 +30,7 @@ pub struct ChainGraph<P = TxHeight, T = Transaction> {
     graph: TxGraph<T>,
 }
 
-impl<P, T> Default for ChainGraph<P, T> {
+impl<P: Ord, T: Ord> Default for ChainGraph<P, T> {
     fn default() -> Self {
         Self {
             chain: Default::default(),
@@ -276,7 +276,7 @@ where
         &'a self,
         tx: &'a Transaction,
     ) -> impl Iterator<Item = (&'a P, Txid)> + 'a {
-        self.graph.walk_conflicts(tx, |_, conflict_txid| {
+        self.graph.walk_conflicts(tx, move |_, conflict_txid| {
             self.chain
                 .tx_position(conflict_txid)
                 .map(|conflict_pos| (conflict_pos, conflict_txid))
@@ -291,6 +291,8 @@ where
         &self,
         changeset: &mut ChangeSet<P, T>,
     ) -> Result<(), UnresolvableConflict<P>> {
+        let changeset_graph_tx = &changeset.graph.tx;
+        
         let chain_conflicts = changeset
             .chain
             .txids
@@ -306,9 +308,7 @@ where
                     .graph
                     .get_tx(txid)
                     .or_else(|| {
-                        changeset
-                            .graph
-                            .tx
+                        changeset_graph_tx
                             .iter()
                             .find(|tx| tx.as_tx().txid() == txid)
                     })
@@ -393,7 +393,7 @@ where
     pub fn transactions_in_chain(&self) -> impl DoubleEndedIterator<Item = (&P, &T)> {
         self.chain
             .txids()
-            .map(|(pos, txid)| (pos, self.graph.get_tx(*txid).expect("must exist")))
+            .map( move |(pos, txid)| (pos, self.graph.get_tx(*txid).expect("must exist")))
     }
 
     /// Finds the transaction in the chain that spends `outpoint` given the input/output
@@ -456,7 +456,7 @@ impl<P, T> ChangeSet<P, T> {
     }
 }
 
-impl<P, T> Default for ChangeSet<P, T> {
+impl<P, T: Ord> Default for ChangeSet<P, T> {
     fn default() -> Self {
         Self {
             chain: Default::default(),

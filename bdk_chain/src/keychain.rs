@@ -112,7 +112,7 @@ impl<K: Ord, P: Ord, T: Ord> Default for KeychainScan<K, P, T> {
     }
 }
 
-impl<K: Ord, P:Ord, T:Ord> From<ChainGraph<P, T>> for KeychainScan<K, P, T> {
+impl<K: Ord, P: Ord, T: Ord> From<ChainGraph<P, T>> for KeychainScan<K, P, T> {
     fn from(update: ChainGraph<P, T>) -> Self {
         KeychainScan {
             update,
@@ -144,7 +144,7 @@ pub struct KeychainChangeSet<K, P, T = Transaction> {
     pub chain_graph: chain_graph::ChangeSet<P, T>,
 }
 
-impl<K:Ord, P:Ord, T:Ord> Default for KeychainChangeSet<K, P, T> {
+impl<K: Ord, P: Ord, T: Ord> Default for KeychainChangeSet<K, P, T> {
     fn default() -> Self {
         Self {
             chain_graph: Default::default(),
@@ -175,7 +175,9 @@ impl<K, P, T> KeychainChangeSet<K, P, T> {
     }
 }
 
-impl<K: Ord, P: ChainPosition, T:Ord> From<chain_graph::ChangeSet<P, T>> for KeychainChangeSet<K, P, T> {
+impl<K: Ord, P: ChainPosition, T: Ord> From<chain_graph::ChangeSet<P, T>>
+    for KeychainChangeSet<K, P, T>
+{
     fn from(changeset: chain_graph::ChangeSet<P, T>) -> Self {
         Self {
             chain_graph: changeset,
@@ -184,7 +186,7 @@ impl<K: Ord, P: ChainPosition, T:Ord> From<chain_graph::ChangeSet<P, T>> for Key
     }
 }
 
-impl<K: Ord, P:ChainPosition, T:Ord> From<DerivationAdditions<K>> for KeychainChangeSet<K, P, T> {
+impl<K: Ord, P: ChainPosition, T: Ord> From<DerivationAdditions<K>> for KeychainChangeSet<K, P, T> {
     fn from(additions: DerivationAdditions<K>) -> Self {
         Self {
             derivation_indices: additions,

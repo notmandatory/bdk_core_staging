@@ -330,10 +330,7 @@ impl<T: AsTransaction + Ord + Clone> TxGraph<T> {
         let mut update = Self::default();
         let mut partials = BTreeMap::new();
         partials.insert(outpoint.vout, txout);
-        update.txs.insert(
-            outpoint.txid,
-            TxNode::Partial(partials),
-        );
+        update.txs.insert(outpoint.txid, TxNode::Partial(partials));
         self.determine_additions(&update)
     }
 }
@@ -630,7 +627,7 @@ where
         };
 
         self.populate_stack(op_spends + 1, txid);
-        return Some(item);
+        Some(item)
     }
 }
 

@@ -140,7 +140,7 @@ impl<K: Clone + Ord + Debug> KeychainTxOutIndex<K> {
     ///
     /// This will panic if a different `descriptor` is introduced to the same `keychain`.
     pub fn add_keychain(&mut self, keychain: K, descriptor: Descriptor<DescriptorPublicKey>) {
-        let old_descriptor = &*self.keychains.entry(keychain).or_insert(descriptor.clone());
+        let old_descriptor = &*self.keychains.entry(keychain).or_insert_with(|| descriptor.clone());
         assert_eq!(
             &descriptor, old_descriptor,
             "keychain already contains a different descriptor"
@@ -538,5 +538,6 @@ where
                 .derived_descriptor(&secp, index)
                 .map(|desc| (index, desc.script_pubkey()))
                 .ok()
-        }).fuse()
+        })
+        .fuse()
 }

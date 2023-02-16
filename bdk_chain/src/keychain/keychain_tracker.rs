@@ -1,6 +1,7 @@
 use bitcoin::Transaction;
 use miniscript::{Descriptor, DescriptorPublicKey};
 
+use crate::sparse_chain::ChainPosition;
 use crate::{
     chain_graph::{self, ChainGraph},
     collections::*,
@@ -9,7 +10,6 @@ use crate::{
     tx_graph::TxGraph,
     AsTransaction, BlockId, FullTxOut, IntoOwned, TxHeight,
 };
-use crate::sparse_chain::ChainPosition;
 
 use super::{Balance, DerivationAdditions};
 
@@ -77,11 +77,11 @@ where
             match self.txout_index.last_revealed_index(&keychain) {
                 Some(existing) if index > existing => {
                     derivation_indices.insert(keychain.clone(), index);
-                },
+                }
                 None => {
                     derivation_indices.insert(keychain.clone(), index);
-                },
-                _ => ()
+                }
+                _ => (),
             }
         }
 
@@ -131,7 +131,7 @@ where
     pub fn full_txouts(&self) -> impl Iterator<Item = (&(K, u32), FullTxOut<P>)> + '_ {
         self.txout_index
             .txouts()
-            .filter_map( move |(spk_i, op, _)| Some((spk_i, self.chain_graph.full_txout(op)?)))
+            .filter_map(move |(spk_i, op, _)| Some((spk_i, self.chain_graph.full_txout(op)?)))
     }
 
     /// Iterates through [`FullTxOut`]s that are unspent outputs.
@@ -295,7 +295,7 @@ where
     }
 }
 
-impl<K:Ord, P:ChainPosition> Default for KeychainTracker<K, P> {
+impl<K: Ord, P: ChainPosition> Default for KeychainTracker<K, P> {
     fn default() -> Self {
         Self {
             txout_index: Default::default(),
